@@ -125,5 +125,19 @@ def to_str(f: Formula) -> str:
     raise TypeError(f"Not a formula: {f!r}")
 
 
+def variables(f: Formula) -> frozenset[str]:
+    """The set of variable names that occur in f."""
+    match f:
+        case Const():
+            return frozenset()
+        case Var(name):
+            return frozenset({name})
+        case Not(operand):
+            return variables(operand)
+        case And(l, r) | Or(l, r) | Implies(l, r) | Iff(l, r):
+            return variables(l) | variables(r)
+    raise TypeError(f"Not a formula: {f!r}")
+
+
     
     
