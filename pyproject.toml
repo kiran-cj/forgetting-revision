@@ -1,0 +1,23 @@
+[project]
+name = "forgetting-revision"
+version = "0.1.0"
+description = "Python Implementation of Variable Forgetting Revision"
+readme = "README.md"
+authors = [
+    { name = "cj", email = "kirancj4000@gmail.com" }
+]
+requires-python = ">=3.14"
+dependencies = []
+
+[build-system]
+requires = ["uv_build>=0.13.6,<0.14.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+]
+
+[tool.pytest.ini_options]
+disable_test_id_escaping_and_forfeit_all_rights_to_community_support = true
+# this is to display the non-ASCII characters lol

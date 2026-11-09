@@ -4,13 +4,6 @@ SYNTAX layer : what a formula IS
 The formula is to be stored as a tree - Abstract Syntax Tree (AST) - where each
 node is a formula and the children of a node are the sub-formulas of that formula. 
 The root of the tree is the formula itself.
-
-    p ∧ ~q is stored as And(p, Not(q))
-            And
-          /    \\
-        p       Not
-                 |
-                 q
                  
 Every node is a *frozen* dataclass, which gives us three things for free:
   - immutability: a formula can never be changed after creation, so
@@ -18,6 +11,12 @@ Every node is a *frozen* dataclass, which gives us three things for free:
   - __eq__: two trees with identical structure compare equal
   - __hash__: formulas can be put in sets and used as dict keys
 
+    p ∧ ~q is stored as And(p, Not(q))
+                And
+              /    \\
+            p       Not
+                     |
+                     q
 """
 
 from dataclasses import dataclass
