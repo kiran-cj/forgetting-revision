@@ -43,13 +43,11 @@ class Signature:
         """Turn a state tuple into a {variable: value} lookup"""
         return dict(zip(self.names, state))
 
+def state_str(state: State) -> str:
+      return "".join("T" if v else "F" for v in state)
 
 def states_str(states: Iterable[State]) -> str:
     """A set of states -> {TF, TT}"""
-    
-    def state_str(state: State) -> str:
-      return "".join("T" if v else "F" for v in state)
-    
     return "{" + ", ".join(sorted((state_str(s) for s in states), reverse=True)) + "}"
 
 
