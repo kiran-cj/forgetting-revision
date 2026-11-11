@@ -1,8 +1,19 @@
 """Tests for the syntax module."""
-import pytest
 from dataclasses import FrozenInstanceError
+
+import pytest
+
 from forgetting_revision import (
-    BOTTOM, TOP, And, Const, Iff, Implies, Not, Or, Var, variables,
+    BOTTOM,
+    TOP,
+    And,
+    Const,
+    Iff,
+    Implies,
+    Not,
+    Or,
+    Var,
+    variables,
 )
 
 p, q, r = Var("p"), Var("q"), Var("r")

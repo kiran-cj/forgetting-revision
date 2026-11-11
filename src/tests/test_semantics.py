@@ -1,8 +1,19 @@
 """Tests for the semantics module."""
 import pytest
+
 from forgetting_revision import (
-    Signature, entails, equivalent, evaluate, is_tautology, models,
-    satisfiable, state_str, states_str, BOTTOM, TOP, Var
+    BOTTOM,
+    TOP,
+    Signature,
+    Var,
+    entails,
+    equivalent,
+    evaluate,
+    is_tautology,
+    models,
+    satisfiable,
+    state_str,
+    states_str,
 )
 
 T, F = True, False

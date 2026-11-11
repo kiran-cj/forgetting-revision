@@ -21,6 +21,7 @@ Every node is a *frozen* dataclass, which gives us three things for free:
 
 from dataclasses import dataclass
 
+
 class Formula:
     """
     Base class for all nodes. Overloads operations to allow for easy construction of
@@ -60,7 +61,7 @@ class Formula:
 # Connectives of the trees are the operators and the leaves are either variables or constants.
 
 
-# ------------------------ Leafs ---------------------------- #
+# ------------------------ Leaves ---------------------------- #
 
 @dataclass(frozen=True, slots=True)
 class Var(Formula):
@@ -110,7 +111,7 @@ _SYMBOLS = {And: "∧", Or: "∨", Implies: "→", Iff: "↔"}
 
 
 def to_str(f: Formula) -> str:
-    """Retuns a formula with logic symbols. Binary connectives are always
+    """Returns a formula with logic symbols. Binary connectives are always
     bracketed, so the printed form is never ambiguous."""
     match f:
         case Const(value):

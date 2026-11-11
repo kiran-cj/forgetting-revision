@@ -41,8 +41,8 @@ def test_substitute_then_simplify():
 
 # --------------------------------------------------------------- simplify
 
-'''Parameteized test cases for simplify, each case runs independently and a failure
-tells exactly while rule broke.'''
+'''Parameterized test cases for simplify, each case runs independently and a failure
+tells exactly which rule broke.'''
 @pytest.mark.parametrize(
     ("formula", "expected"),
     [

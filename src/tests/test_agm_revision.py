@@ -3,8 +3,6 @@
 States use signature order (sick, diam), as in Booth & Hunter Example 3.
 """
 
-from itertools import chain, combinations, product
-
 import pytest
 
 from forgetting_revision import AGMRevision

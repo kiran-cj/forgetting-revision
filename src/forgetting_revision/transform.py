@@ -1,7 +1,7 @@
 """
 Transformation layer: building new trees from old ones.
 
-  substitute(α, {"q": TOP})   substitutes the truth value 'TOP' to Var('q)- α[q/⊤]
+  substitute(α, {"q": TOP})   substitutes the truth value 'TOP' to Var('q')- α[q/⊤]
   simplify(f)                 folds away ⊤ and ⊥ so results are readable
 
 Both return NEW formulas; the input is never modified (nodes are frozen).
@@ -10,6 +10,7 @@ Both return NEW formulas; the input is never modified (nodes are frozen).
 from collections.abc import Mapping
 
 from .syntax import BOTTOM, TOP, And, Const, Formula, Iff, Implies, Not, Or, Var
+
 
 def substitute(f: Formula, mapping: Mapping[str, Formula]) -> Formula:
     """Replace every occurrence of each variable named in `mapping` with
@@ -92,31 +93,3 @@ def simplify(f: Formula) -> Formula:
             return Iff(a, b)
 
     raise TypeError(f"Not a formula: {f!r}")
-
-def test():
-    p, q, r = Var("p"), Var("q"), Var("r")
-    f = p & (~q >> r)                      
-
-    # 1. Basic replacement with constants
-    print(substitute(f, {"q": TOP}))       # (p ∧ (¬⊤ → r))
-    print(substitute(f, {"q": BOTTOM}))    # (p ∧ (¬⊥ → r))
-
-    # 2. The original is untouched (immutability)
-    print(f)                               # (p ∧ (¬q → r))
-
-    # 3. Variables not in the mapping stay the same
-    assert substitute(f, {"z": TOP}) == f
-
-    # 4. Replace with a whole formula, not just a constant
-    print(substitute(f, {"p": q | r}))     # ((q ∨ r) ∧ (¬q → r))
-
-    # 5. Simultaneous: a clean swap, not p→q→p
-    assert substitute(p & q, {"p": q, "q": p}) == (q & p)
-
-    # 6. Combined with simplify
-    print(simplify(substitute(f, {"q": TOP})))     # p
-    print(simplify(substitute(f, {"q": BOTTOM})))  # (p ∧ r)
-
-    print("All checks passed")
-
-test()

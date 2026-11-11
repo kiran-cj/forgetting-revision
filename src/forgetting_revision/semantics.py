@@ -11,10 +11,11 @@ Terminology:
   - Mod(α)            : models(α, sig), the set of states where α is true
 """
 
-from itertools import product
-from dataclasses import dataclass
 from collections.abc import Iterable, Mapping
-from .syntax import Formula, Var, Const, Not, And, Or, Implies, Iff, variables
+from dataclasses import dataclass
+from itertools import product
+
+from .syntax import And, Const, Formula, Iff, Implies, Not, Or, Var, variables
 
 State = tuple[bool, ...]
 
@@ -41,7 +42,7 @@ class Signature:
 
     def assignment(self, state: State) -> dict[str, bool]:
         """Turn a state tuple into a {variable: value} lookup"""
-        return dict(zip(self.names, state))
+        return dict(zip(self.names, state, strict=True))
 
 def state_str(state: State) -> str:
       return "".join("T" if v else "F" for v in state)
@@ -106,4 +107,4 @@ def satisfiable(f: Formula, sig: Signature) -> bool:
 
 def is_tautology(f: Formula, sig: Signature) -> bool:
     """Checks if all states are models"""
-    return len(models(f, sig)) == 2 ** len(sig)
+    return models(f, sig) == frozenset(sig.states())

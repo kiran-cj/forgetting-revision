@@ -12,10 +12,12 @@ most plausible states, tier 1 the next, and so on. Everything is done on sets
 of states, so revision never has to look at formula syntax.
 """
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from functools import cached_property
 from itertools import product
-from typing import Iterable, Protocol
+from typing import Protocol
+
 from .semantics import State
 
 
@@ -125,7 +127,7 @@ class AGMRevision:
 
         Walk up from the bottom tier and stop at the first tier that contains
         any candidate. If there are no candidates (beta is inconsistent), the
-        result is empty, i.e. an inconsistent belief set, which inturn performs no
+        result is empty, i.e. an inconsistent belief set, which in-turn performs no
         revision and the belief set remains unchanged.
         """
         unknown = candidates - self.universe

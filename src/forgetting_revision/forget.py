@@ -7,14 +7,15 @@ only ever depend on the ForgetOperator, never on a specific implementation, so
 swapping to different kind of forget operator means writing a new class and
 nothing else.
 
-    forget: ForgetOperator = BooleForget{}
+    forget: ForgetOperator = BooleForget()
     weakened = forget(alpha, {"q"})
 """
 from collections.abc import Iterable
 from typing import Protocol
 
-from .syntax import Formula, Or, TOP, BOTTOM
+from .syntax import BOTTOM, TOP, Formula, Or
 from .transform import simplify, substitute
+
 
 class ForgetOperator(Protocol):
     """A forget operator takes a formula and a set of variable names, and
@@ -32,8 +33,6 @@ class BooleForget: # transformation function for Variable Forgetting Revision
 
     A set of variables is forgotten one at a time.
     """
-
-    name = "boole"
 
     def __call__(self, formula: Formula, forget: Iterable[str]) -> Formula:
         if isinstance(forget, str):          # guard: "p1" would iterate as "p", "1"

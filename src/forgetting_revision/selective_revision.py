@@ -14,8 +14,8 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 from typing import Protocol
 
-from .forget import BooleForget, ForgetOperator
 from .agm_revision import RevisionOperator
+from .forget import BooleForget, ForgetOperator
 from .semantics import Signature, State, models
 from .syntax import Formula
 from .trust import StatePartition
@@ -32,7 +32,7 @@ class ForgetTransform:
     """VFR's f: forget the untrusted variables, then take models."""
 
     signature: Signature
-    untrusted: frozenset[str]
+    untrusted: str | Iterable[str]
     forget: ForgetOperator = field(default_factory=BooleForget)
 
     def __post_init__(self) -> None:

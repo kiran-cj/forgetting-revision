@@ -11,7 +11,7 @@ The goal is to turn the dissertation's pen-and-paper results into code that chec
 
 A doctor says to the patient: *"You have a viral infection, and the jewel on your necklace is not a diamond."*
 
-The patient naturally accepts the diagnosis but rejects(forgets) the claim on the jwellery, because the doctor is considered to be an expert in the medicinal field but not on gemstones and jwellery. Classical (AGM) belief revision can't do this, since it must accept the whole input.
+The patient naturally accepts the diagnosis but rejects(forgets) the claim on the jewellery, because the doctor is considered to be an expert in the medical field but not on gemstones and jewellery. Classical (AGM) belief revision can't do this, since it must accept the whole input.
 
 VFR handles it in two steps:
 

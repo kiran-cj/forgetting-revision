@@ -3,17 +3,17 @@
 Agent A associates a partition of 2^F with each source B. Two states share a
 cell exactly when A does not trust B to tell them apart.
 
-An information alpha from B is then read as evidence for every state in any cell that
+An report α from B is then read as evidence for every state in any cell that
 contains a model of alpha:
     Pi[alpha] = union of the cells that intersect Mod(alpha)
 
 Trust-sensitive revision is ordinary AGM revision by that expanded set of states.
 """
 
+from collections.abc import Callable, Hashable, Iterable
 from dataclasses import dataclass
 from functools import cached_property
 from itertools import product
-from typing import Callable, Hashable, Iterable
 
 from .semantics import Signature, State
 
