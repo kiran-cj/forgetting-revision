@@ -15,8 +15,21 @@ of states, so revision never has to look at formula syntax.
 from dataclasses import dataclass
 from functools import cached_property
 from itertools import product
-from typing import Iterable
+from typing import Iterable, Protocol
 from .semantics import State
+
+
+class RevisionOperator(Protocol):
+    """A revision operator holds the agent's current beliefs and, given the
+    states of a new piece of information, returns the most plausible of them."""
+
+    def belief_states(self) -> frozenset[State]:
+        """Mod(K): the states the agent currently considers possible."""
+        ...
+
+    def revise(self, candidates: frozenset[State]) -> frozenset[State]:
+        """Mod(K ∗ β), given candidates = Mod(β)."""
+        ...
 
 
 @dataclass(frozen=True)
