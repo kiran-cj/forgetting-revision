@@ -36,16 +36,15 @@ class ForgetTransform:
     forget: ForgetOperator = field(default_factory=BooleForget)
 
     def __post_init__(self) -> None:
-        untrusted = self.untrusted
-        if isinstance(untrusted, str):           # "p1" must not become {"p", "1"}
-            untrusted = [untrusted]
-        # Frozen dataclasses block normal assignment; object.__setattr__ is
-        # the standard way to normalise a field once, during construction.
-        object.__setattr__(self, "untrusted", frozenset(untrusted))
-
-        unknown = self.untrusted - set(self.signature.names)
+        untrusted = (
+            frozenset([self.untrusted])
+            if isinstance(self.untrusted, str)
+            else frozenset(self.untrusted)
+        )
+        unknown = untrusted - set(self.signature.names)
         if unknown:
             raise ValueError(f"variables {sorted(unknown)} not in signature {self.signature.names}")
+        object.__setattr__(self, "untrusted", untrusted)
 
     def __call__(self, alpha: Formula) -> frozenset[State]:
         return models(self.forget(alpha, self.untrusted), self.signature)

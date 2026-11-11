@@ -49,6 +49,21 @@ def test_states_count_is_2_to_the_n():
 def test_assignment():
     assert PQ.assignment((T, F)) == {"p": T, "q": F}
 
+def test_constructor_rejects_duplicate_names():
+    with pytest.raises(ValueError):
+        Signature(("p", "p"))
+
+def test_constructor_rejects_bare_string():
+    with pytest.raises(TypeError):
+        Signature("p q")
+
+def test_assignment_rejects_wrong_length_state():
+    sig = Signature.of("p q")
+    with pytest.raises(ValueError):
+        sig.assignment((True,))
+    with pytest.raises(ValueError):
+        sig.assignment((True, False, True))
+
 
 # --------------------------------------------------------------- display
 

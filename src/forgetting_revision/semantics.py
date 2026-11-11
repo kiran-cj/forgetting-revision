@@ -23,6 +23,16 @@ State = tuple[bool, ...]
 class Signature:
     names: tuple[str, ...]
     
+    def __post_init__(self) -> None:
+        if isinstance(self.names, str):
+            raise TypeError(
+                f"names must be a tuple of strings; use Signature.of({self.names!r}) "
+                "to split a space-separated string"
+            )
+        if len(set(self.names)) != len(self.names):
+            # keep your existing message text so any `match=` in your tests still passes
+            raise ValueError(f"Duplicate variable names in signature: {self.names}")
+    
     @classmethod
     def of(cls, names: str | Iterable[str]) -> Signature:
         """Signature.of("p q r") or Signature.of(["p", "q", "r"])"""
