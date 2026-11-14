@@ -3,8 +3,10 @@ name = "forgetting-revision"
 version = "0.1.0"
 description = "Python Implementation of Variable Forgetting Revision"
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [
-    { name = "cj", email = "kirancj4000@gmail.com" }
+    { name = "Kiran CJ", email = "kirancj4000@gmail.com" }
 ]
 requires-python = ">=3.14"
 dependencies = []
