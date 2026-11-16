@@ -217,6 +217,7 @@ src/tests/                pytest suite
 - Kiran CJ. *Forgotten Truths: Exploring Variable Forgetting in Belief Revision.* MSc dissertation, Cardiff University, 2026.
 
 
-## License
-
-MIT. See [LICENSE](LICENSE).
+## Licence
+ 
+- **Code:** MIT. See [LICENSE](LICENSE).
+- **Dissertation** ([`docs/`](docs/)): © 2026 Kiran C. James, licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). You may share and adapt it with credit. See [docs/LICENSE.md](docs/LICENSE.md), and [docs/ERRATA.md](docs/ERRATA.md) for corrections found by the checker.

@@ -1,0 +1,23 @@
+# Licence for the dissertation
+
+The dissertation in this folder,
+
+> Kiran C. James. *Forgotten Truths: Exploring Variable Forgetting in Belief Revision.* MSc dissertation, School of Computer Science and Informatics, Cardiff University, 2026.
+
+is © 2026 Kiran C. James and is licensed under the **Creative Commons Attribution 4.0 International licence (CC BY 4.0)**.
+
+You are free to:
+
+- **Share:** copy and redistribute it in any medium or format, and
+- **Adapt:** remix, transform and build on it,
+
+for any purpose, provided you give **appropriate credit**: name the author, give the title, link to the licence, and indicate if you made changes.
+
+Full legal text: <https://creativecommons.org/licenses/by/4.0/legalcode>
+Summary: <https://creativecommons.org/licenses/by/4.0/>
+
+This licence covers the dissertation only. The source code in this repository is licensed separately under the MIT licence; see [`../LICENSE`](../LICENSE).
+
+## Errata
+
+The postulate checker in this repository found five places where the dissertation text should be corrected. They are listed in [`ERRATA.md`](ERRATA.md). The dissertation itself is kept exactly as submitted.
