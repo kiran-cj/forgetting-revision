@@ -9,13 +9,28 @@ Terminology:
   - 2^F               : Signature.states(), all 2^n (n is the number of 
                         variables in the signature) states
   - Mod(α)            : models(α, sig), the set of states where α is true
+  - meaning           : a set of states. Every formula has exactly one meaning,
+                        Mod(α), and there are only 2^(2^n) meanings, so
+                        meanings(sig) lists every formula up to equivalence.
 """
 
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
-from itertools import product
+from itertools import chain, combinations, product
 
-from .syntax import And, Const, Formula, Iff, Implies, Not, Or, Var, variables
+from .syntax import (
+    BOTTOM,
+    TOP,
+    And,
+    Const,
+    Formula,
+    Iff,
+    Implies,
+    Not,
+    Or,
+    Var,
+    variables,
+)
 
 State = tuple[bool, ...]
 
@@ -32,7 +47,7 @@ class Signature:
         if len(set(self.names)) != len(self.names):
             # keep your existing message text so any `match=` in your tests still passes
             raise ValueError(f"Duplicate variable names in signature: {self.names}")
-    
+
     @classmethod
     def of(cls, names: str | Iterable[str]) -> Signature:
         """Signature.of("p q r") or Signature.of(["p", "q", "r"])"""
@@ -118,3 +133,71 @@ def satisfiable(f: Formula, sig: Signature) -> bool:
 def is_tautology(f: Formula, sig: Signature) -> bool:
     """Checks if all states are models"""
     return models(f, sig) == frozenset(sig.states())
+
+
+# ------------------------- From states back to formulas ------------------------- #
+# models() goes formula -> states. These go the other way: given a set of
+# states, build a formula whose models are exactly that set. The postulate
+# checker needs this because it quantifies over meanings (sets of states) but
+# operators only accept formulas.
+
+def meanings(sig: Signature) -> list[frozenset[State]]:
+    """Every set of states over sig: 2^(2^n) of them (16 for two variables).
+
+    Ordered by size, then by state order, so the list is the same on every run:
+    ∅ first, all states last.
+    """
+    states = sig.states()
+    return [
+        frozenset(c)
+        for c in chain.from_iterable(combinations(states, r) for r in range(len(states) + 1))
+    ]
+
+
+def _literal(name: str, value: bool) -> Formula:
+    return Var(name) if value else Not(Var(name))
+
+
+def state_formula(state: State, sig: Signature) -> Formula:
+    """prop(s), B&H Definition 5: the conjunction of literals true in s.
+
+    For sig (p, q), the state TF becomes p ∧ ¬q. Its only model is s itself.
+    """
+    literals = [_literal(n, v) for n, v in zip(sig.names, state, strict=True)]
+    formula: Formula = literals[0]
+    for lit in literals[1:]:
+        formula = And(formula, lit)
+    return formula
+
+
+def dnf(states: Iterable[State], sig: Signature) -> Formula:
+    """A formula whose models are exactly `states` (B&H Definitions 6-7).
+
+    Disjunctive normal form: one conjunction per state, OR-ed together.
+    The empty set gives ⊥. States are taken TT..T first, so output is stable.
+    """
+    terms = [state_formula(s, sig) for s in sorted(set(states), reverse=True)]
+    if not terms:
+        return BOTTOM
+    formula: Formula = terms[0]
+    for term in terms[1:]:
+        formula = Or(formula, term)
+    return formula
+
+
+def cnf(states: Iterable[State], sig: Signature) -> Formula:
+    """The same meaning as dnf(states), written differently.
+
+    Conjunctive normal form: for every state OUTSIDE the set, add "not that
+    state". The full set of states gives ⊤. Having two syntactically different
+    formulas per meaning is what lets the checker test Extensionality.
+    """
+    inside = set(states)
+    excluded = [s for s in sig.states() if s not in inside]
+    if not excluded:
+        return TOP
+    clauses = [Not(state_formula(s, sig)) for s in excluded]
+    formula: Formula = clauses[0]
+    for clause in clauses[1:]:
+        formula = And(formula, clause)
+    return formula
