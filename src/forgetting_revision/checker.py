@@ -15,6 +15,7 @@ What a report contains:
   - postulates that hold only vacuously (premise never triggered),
   - the nine transformation properties on identity / TrustExpansion / ForgetTransform,
   - the relationships between postulates (r1-r3), which must have no violations,
+  - the instance claims and negative controls from claims.py,
   - any disagreement with EXPECTED, the verdicts claimed by AGM, Booth &
     Hunter and the dissertation. A disagreement makes main() exit with
     status 1, so the check can run in CI.
@@ -25,6 +26,7 @@ import sys
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, field
 
+from .claims import CLAIMS, CONTROL, INSTANCE, ClaimResult, run_claims
 from .families import FAMILIES, Member, format_partition, partitions, untrusted_sets
 from .postulates import POSTULATES, Postulate, PostulateResult, check, format_witness
 from .selective_revision import (
@@ -215,6 +217,7 @@ def run_transforms(sig: Signature) -> dict[str, TransformReport]:
 def format_report(
     reports: Mapping[str, FamilyReport],
     transform_reports: Mapping[str, TransformReport] | None = None,
+    claim_results: Mapping[str, ClaimResult] | None = None,
 ) -> str:
     sig = next(iter(reports.values())).signature
     sizes = ", ".join(f"{r.size:,} {f}" for f, r in reports.items())
@@ -265,8 +268,23 @@ def format_report(
         out.append(f"  {rel.code}  {rel.statement:<58} {counts}")
     out.append("")
 
+    # --- instance claims and negative controls
+    if claim_results:
+        for kind, heading in ((INSTANCE, "Instance claims"),
+                              (CONTROL, "Negative controls (each must be reported as failing its target)")):
+            out.append(heading)
+            for code, claim_result in claim_results.items():
+                c = CLAIMS[code]
+                if c.kind == kind:
+                    out.append(f"  {code:<3} {'✓' if claim_result.holds else '✗'}  {c.title}  [{c.source}]")
+                    out.append(f"         {claim_result.detail}")
+            out.append("")
+
     # --- comparison with the literature
     problems = mismatches(reports)
+    if claim_results:
+        problems += [f"claim {code} does not hold: {CLAIMS[code].title}"
+                     for code, r in claim_results.items() if not r.holds]
     if transform_reports:
         problems += [f"{k} fails {name}" for k, tr in transform_reports.items()
                      for name in PROPERTIES if tr.failing(name)]
@@ -291,9 +309,13 @@ def main(argv: list[str] | None = None) -> int:
     sig = Signature(tuple("pqr"[: args.vars]))
     reports = run_all(sig)
     transform_reports = run_transforms(sig)
-    print(format_report(reports, transform_reports))
-    failed = bool(mismatches(reports)) or any(
-        tr.failing(name) for tr in transform_reports.values() for name in PROPERTIES
+    # The claims are stated for two variables, so they run once, whatever --vars is.
+    claim_results = run_claims()
+    print(format_report(reports, transform_reports, claim_results))
+    failed = (
+        bool(mismatches(reports))
+        or any(tr.failing(name) for tr in transform_reports.values() for name in PROPERTIES)
+        or not all(r.holds for r in claim_results.values())
     )
     return 1 if failed else 0
 
