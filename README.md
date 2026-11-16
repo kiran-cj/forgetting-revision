@@ -38,7 +38,7 @@ so the patient revises his belief by the fact that he has a viral infection alon
 Needs Python 3.14 and [uv](https://docs.astral.sh/uv/).
 
 ```bash
-git clone <this repository>
+git clone https://github.com/kiran-cj/forgetting-revision.git
 cd forgetting-revision
 uv run pytest -q              # the test suite
 uv run check-postulates       # every postulate, every operator, with counterexamples
@@ -206,9 +206,9 @@ src/tests/                pytest suite
 ## References
 
 - C. E. Alchourrón, P. Gärdenfors and D. Makinson. On the logic of theory change. *Journal of Symbolic Logic* 50(2), 1985.
-- R. Booth and A. Hunter. Trust as a precursor to belief revision. *Journal of Artificial Intelligence Research* 61, 2018.
 - E. L. Fermé and S. O. Hansson. Selective revision. *Studia Logica* 63(3), 1999.
-- K. C. James. *Forgotten Truths: Exploring Variable Forgetting in Belief Revision.* MSc dissertation, Cardiff University, 2026.
+- R. Booth and A. Hunter. Trust as a precursor to belief revision. *Journal of Artificial Intelligence Research* 61, 2018.
+- Kiran CJ. *Forgotten Truths: Exploring Variable Forgetting in Belief Revision.* MSc dissertation, Cardiff University, 2026.
 
 
 ## License
