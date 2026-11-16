@@ -184,7 +184,9 @@ CheckFn = Callable[[OutcomeTable, BeliefChangeOperator], Cases]
 def format_witness(witness: Witness) -> str:
     """("φ", {TT, TF}), ("K◦φ", {FT})  ->  φ = {TT, TF}, K◦φ = {FT}"""
     def show(value: object) -> str:
-        return states_str(value) if isinstance(value, frozenset) else str(value)
+        if isinstance(value, frozenset):
+            return states_str(value) if value else "∅"
+        return str(value)
     return ", ".join(f"{label} = {show(value)}" for label, value in witness)
 
 

@@ -1,22 +1,19 @@
 """Tests for the 24 operator postulates.
 
-Three kinds of test:
+The verdict matrix (every postulate × every family) is in test_postulates.py.
+This file tests the postulates themselves:
 
-  1. The VERDICT MATRIX: every postulate on every operator of every family
-     (75 AGM, 1,125 TSR, 300 VFR over two variables), against the verdicts
-     claimed by AGM, Booth & Hunter and the dissertation.
-  2. KNOWN COUNTEREXAMPLES from the papers, checked one by one, so a failure
+  1. the registry,
+  2. family-level facts such as which passes are vacuous,
+  3. KNOWN COUNTEREXAMPLES from the papers, checked one by one, so a failure
      is reported for the right reason and not just "somewhere".
-  3. NEGATIVE CONTROLS: operators built to break a postulate. A checker that
+  4. NEGATIVE CONTROLS: operators built to break a postulate. A checker that
      never says "fails" proves nothing, so these show it can.
 """
-
-from functools import cache
 
 import pytest
 
 from forgetting_revision import (
-    FAMILIES,
     AGMRevision,
     IdentityTransform,
     Not,
@@ -33,7 +30,6 @@ from forgetting_revision import (
 from forgetting_revision.postulates import (
     POSTULATES,
     OutcomeTable,
-    PostulateResult,
     check,
     format_witness,
     postulate,
@@ -65,65 +61,34 @@ def test_registering_a_duplicate_is_an_error():
             yield True, ()
 
 
-# ============================================================ 2. verdict matrix
+# ============================================================ 2. family-level behaviour
+# The verdict matrix itself is in test_postulates.py. These use the shared
+# reports2 fixture from conftest.py: every operator, checked once per session.
 
-# What the literature claims (True = every operator in the family satisfies it).
-# AGM satisfies everything; TSR and VFR fail exactly these eight.
-FAILS_FOR_TSR_AND_VFR = {
-    "Success", "Vacuity", "Superexpansion", "Subexpansion",
-    "Weak success", "Very weak success", "Negation invariance", "Non-manipulability",
-}
-EXPECTED = {
-    (name, family): family == "AGM" or name not in FAILS_FOR_TSR_AND_VFR
-    for name in POSTULATES
-    for family in FAMILIES
-}
+def results(reports2, family):
+    return [res for _, res in reports2[family].results]
 
 
-@cache
-def family_results(family: str) -> list[dict[str, PostulateResult]]:
-    """Every operator of the family checked once, then shared by all 72 tests."""
-    return [check(member.operator, SIG) for member in FAMILIES[family](SIG)]
-
-
-@pytest.mark.parametrize(("name", "family"), sorted(EXPECTED), ids=lambda x: str(x))
-def test_verdict_matrix(name, family):
-    results = [r[name] for r in family_results(family)]
-    holds_everywhere = all(r.holds for r in results)
-    if EXPECTED[name, family]:
-        failure = next((r for r in results if not r.holds), None)
-        assert holds_everywhere, failure.explain() if failure else ""
-    else:
-        assert not holds_everywhere, f"{name} was expected to fail somewhere in {family}"
-
-
-def test_agm_passes_non_manipulability_only_vacuously():
+def test_agm_passes_non_manipulability_only_vacuously(reports2):
     """Under Success, 'K ◦ φ ⊬ φ' never happens, so nothing is ever tested."""
-    assert all(r["Non-manipulability"].vacuous for r in family_results("AGM"))
-    assert any(r["Non-manipulability"].triggered for r in family_results("TSR"))
+    assert all(r["Non-manipulability"].vacuous for r in results(reports2, "AGM"))
+    assert any(r["Non-manipulability"].triggered for r in results(reports2, "TSR"))
 
 
-def test_premises_are_actually_triggered():
+def test_premises_are_actually_triggered(reports2):
     """Guards against a pass that only means 'premise never came up'."""
     for name in ("Vacuity", "Subexpansion", "Disjunctive inclusion", "Deficit makeup",
                  "Very weak success", "Feeble success", "Weak non-manipulability"):
-        assert any(r[name].triggered for r in family_results("VFR")), name
+        assert any(r[name].triggered for r in results(reports2, "VFR")), name
 
 
-def test_failing_success_forces_failing_superexpansion():
+def test_failing_success_forces_failing_superexpansion(reports2):
     """With Consistency, Superexpansion at ψ = ¬φ forces Success (catalogue §7.4).
     So every TSR/VFR operator that fails Success must fail Superexpansion too."""
     for family in ("TSR", "VFR"):
-        for r in family_results(family):
+        for r in results(reports2, family):
             if not r["Success"].holds:
                 assert not r["Superexpansion"].holds
-
-
-def test_very_weak_success_and_negation_invariance_always_agree():
-    """B&H call them equivalent; check it operator by operator."""
-    for family in FAMILIES:
-        for r in family_results(family):
-            assert r["Very weak success"].holds == r["Negation invariance"].holds
 
 
 # ============================================================ 3. counterexamples from the papers
