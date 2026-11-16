@@ -1,9 +1,15 @@
-"""Families of operators: every AGM, TSR and VFR operator over a signature.
+"""Every configuration of AGM, TSR and VFR revision over a signature.
 
-A postulate is a property of ONE operator. To say "TSR satisfies Deficit
-makeup" we have to check every TSR operator, so we need to generate them all.
+AGM, TSR and VFR are three METHODS of revision. A CONFIGURATION is one
+concrete instance of a method, with all its settings fixed: a plausibility
+ordering, plus a trust setting for TSR and VFR. (Booth & Hunter call each such
+instance "an operator"; this package says "configuration" so that "the TSR
+operator" can keep meaning the method.)
 
-An operator is fixed by its parameters:
+A postulate is a property of ONE configuration. To say "TSR satisfies
+Deficit makeup" we have to check every TSR configuration, so we generate them all.
+
+A configuration is fixed by its settings:
 
     AGM   one per ordering                      (identity transform)
     TSR   one per (ordering, state partition)
@@ -102,10 +108,10 @@ def untrusted_sets(sig: Signature) -> Iterator[frozenset[str]]:
 
 @dataclass(frozen=True)
 class Member:
-    """One operator of a family, together with the parameters that built it.
+    """One configuration of a method, together with the settings that built it.
 
     The parameters are kept so a counterexample can say exactly which
-    operator failed, e.g. "VFR, ordering {TT} < {TF, FT} < {FF}, untrusted {p}".
+    configuration failed, e.g. "VFR, ordering {TT} < {TF, FT} < {FF}, untrusted {p}".
     """
 
     family: str
@@ -136,14 +142,14 @@ def format_partition(partition: StatePartition) -> str:
 
 
 def agm_family(sig: Signature) -> Iterator[Member]:
-    """Plain AGM: one operator per ordering."""
+    """Plain AGM: one configuration per ordering."""
     for ordering in orderings(sig):
         op = SelectiveRevision.agm(AGMRevision(ordering), sig)
         yield Member("AGM", sig, ordering, op)
 
 
 def tsr_family(sig: Signature) -> Iterator[Member]:
-    """Trust-sensitive revision: one operator per (ordering, partition)."""
+    """Trust-sensitive revision: one configuration per (ordering, partition)."""
     all_partitions = list(partitions(sig))      # reused for every ordering
     for ordering in orderings(sig):
         revision = AGMRevision(ordering)
@@ -153,7 +159,7 @@ def tsr_family(sig: Signature) -> Iterator[Member]:
 
 
 def vfr_family(sig: Signature) -> Iterator[Member]:
-    """Variable forgetting revision: one operator per (ordering, untrusted set)."""
+    """Variable forgetting revision: one configuration per (ordering, untrusted set)."""
     all_untrusted = list(untrusted_sets(sig))
     for ordering in orderings(sig):
         revision = AGMRevision(ordering)

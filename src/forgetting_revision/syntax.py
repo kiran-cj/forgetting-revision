@@ -33,6 +33,9 @@ class Formula:
         p >> q    Implies(p, q)
         p.iff(q)  Iff(p, q)
       
+    Mixing in anything that is not a Formula (p & True, p | "q") raises a
+    TypeError straight away, instead of building a tree that fails later.
+
     WARNING about precedence: >> binds TIGHTER than & and |.
     So  p & q >> r  means  p & (q >> r).  Always bracket implications.
     
@@ -44,15 +47,23 @@ class Formula:
         return Not(self)
 
     def __and__(self, other: Formula) -> Formula:
+        if not isinstance(other, Formula):
+            return NotImplemented            # lets Python raise a clear TypeError
         return And(self, other)
 
     def __or__(self, other: Formula) -> Formula:
+        if not isinstance(other, Formula):
+            return NotImplemented            # lets Python raise a clear TypeError
         return Or(self, other)
 
     def __rshift__(self, other: Formula) -> Formula:
+        if not isinstance(other, Formula):
+            return NotImplemented            # lets Python raise a clear TypeError
         return Implies(self, other)
 
     def iff(self, other: Formula) -> Formula:
+        if not isinstance(other, Formula):   # a plain method, so raise directly
+            raise TypeError(f"iff needs a Formula, got {type(other).__name__}")
         return Iff(self, other)
 
     def __str__(self) -> str:

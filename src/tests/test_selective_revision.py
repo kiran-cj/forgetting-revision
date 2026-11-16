@@ -5,7 +5,6 @@ They share the AGM revision ∗ and differ only in the transformation f.
 """
 
 import random
-from functools import reduce
 from itertools import chain, combinations
 
 import pytest
@@ -27,6 +26,7 @@ from forgetting_revision import (
     StatePartition,
     TrustExpansion,
     Var,
+    dnf,
     models,
     states_str,
 )
@@ -38,23 +38,6 @@ from forgetting_revision import (
 def subsets(xs):
     xs = list(xs)
     return [frozenset(c) for c in chain.from_iterable(combinations(xs, r) for r in range(len(xs) + 1))]
-
-
-def formula_with_models(states, sig: Signature) -> Formula:
-    """A DNF formula whose models are exactly `states` (B&H Defs 5-6).
-
-    Each state becomes a conjunction of literals, and the conjunctions are
-    OR-ed together. One formula per set of states covers every formula up
-    to logical equivalence.
-    """
-    def literal(name: str, value: bool) -> Formula:
-        return Var(name) if value else ~Var(name)
-
-    def conjunction(state: State) -> Formula:
-        return reduce(And, (literal(n, v) for n, v in zip(sig.names, state)))
-
-    states = sorted(states)
-    return reduce(Or, (conjunction(s) for s in states)) if states else BOTTOM
 
 
 def random_formula(rng: random.Random, names, depth: int = 4) -> Formula:
@@ -142,7 +125,7 @@ SIGNATURES = [Signature.of("p q"), Signature.of("p q r")]
 
 @pytest.mark.parametrize("sig", SIGNATURES, ids=lambda s: " ".join(s.names))
 def test_forgetting_equals_trust_expansion_on_every_formula(sig):
-    all_formulas = [formula_with_models(x, sig) for x in subsets(sig.states())]
+    all_formulas = [dnf(x, sig) for x in subsets(sig.states())]
     for untrusted in subsets(sig.names):
         forget = ForgetTransform(sig, untrusted)
         expand = TrustExpansion(sig, StatePartition.from_untrusted(sig, untrusted))
@@ -177,7 +160,7 @@ def test_mismatched_partition_gives_different_states():
 # ---------------------------------------------------------------------- #
 
 K_CHOICES = [k for k in subsets(SIG2.states()) if k]
-CONSISTENT = [formula_with_models(x, SIG2) for x in subsets(SIG2.states()) if x]
+CONSISTENT = [dnf(x, SIG2) for x in subsets(SIG2.states()) if x]
 
 
 @pytest.mark.parametrize("k", K_CHOICES, ids=states_str)
@@ -269,3 +252,17 @@ def test_single_name_not_split_into_characters():
 def test_partition_signature_mismatch_rejected():
     with pytest.raises(ValueError):
         TrustExpansion(Signature.of("p q r"), StatePartition.trivial(SIG2))
+
+# ---------------------------------------------------------------------- #
+# Equality: identical settings give equal objects
+
+def test_boole_forget_instances_are_interchangeable():
+    from forgetting_revision import BooleForget
+    assert BooleForget() == BooleForget()
+    assert hash(BooleForget()) == hash(BooleForget())
+
+
+def test_identical_forget_transforms_are_equal():
+    sig = Signature.of("p q")
+    assert ForgetTransform(sig, "q") == ForgetTransform(sig, ["q"])
+    assert ForgetTransform(sig, "q") != ForgetTransform(sig, "p")

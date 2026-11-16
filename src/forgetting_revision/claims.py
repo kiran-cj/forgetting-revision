@@ -1,6 +1,6 @@
 """Instance claims and negative controls: the specific results the papers state.
 
-The postulates are FAMILY claims ("every TSR operator satisfies X"). The
+The postulates are FAMILY claims ("every TSR configuration satisfies X"). The
 claims here are about particular settings or examples, and so cannot be
 written as a postulate:
 
@@ -21,7 +21,7 @@ from dataclasses import dataclass
 from functools import cache
 
 from .agm_revision import AGMRevision
-from .families import format_partition, orderings, partitions, untrusted_sets
+from .families import FAMILIES, format_partition, orderings, partitions, untrusted_sets
 from .postulates import POSTULATES, OutcomeTable, check, variants
 from .selective_revision import (
     ForgetTransform,
@@ -215,6 +215,25 @@ def doctor_necklace() -> ClaimResult:
     ok = ex1 and ex2 and all(ex3)
     return ClaimResult(ok, "Ex 1: Forget(sick ∧ ¬diam) ≡ sick; Ex 2: ≡ sick over 3 variables; "
                            "B&H Ex 3 results (1)-(3) reproduced")
+
+
+@claim("i9", "AGM ⊂ VFR ⊂ TSR: 75 ⊂ 144 ⊂ 489 distinct behaviours",
+       "dissertation §6.1, §6.5.4; B&H Prop 2", INSTANCE)
+def distinct_behaviours() -> ClaimResult:
+    """Two configurations can behave identically: with no trust, only the bottom
+    tier of the ordering matters, so orderings that share it coincide. A
+    behaviour is K plus the result of revising by every meaning."""
+    def behaviour(op: SelectiveRevision) -> tuple[frozenset[State], tuple[frozenset[State], ...]]:
+        return op.belief_states(), tuple(op.revise(dnf(m, SIG)) for m in meanings(SIG))
+
+    settings = {name: list(gen(SIG)) for name, gen in FAMILIES.items()}
+    found = {name: {behaviour(m.operator) for m in members} for name, members in settings.items()}
+    agm, vfr, tsr = found["AGM"], found["VFR"], found["TSR"]
+    ok = agm < vfr < tsr and (len(agm), len(vfr), len(tsr)) == (75, 144, 489)
+    counts = ", ".join(f"{name} {len(settings[name]):,} configurations → {len(found[name])} behaviours"
+                       for name in ("AGM", "VFR", "TSR"))
+    return ClaimResult(ok, f"{counts}; each family strictly inside the next, "
+                           f"so 1,500 configurations give {len(agm | vfr | tsr)} distinct behaviours")
 
 
 # ============================================================ negative controls

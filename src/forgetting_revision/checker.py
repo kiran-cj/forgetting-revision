@@ -12,8 +12,8 @@ or from the command line:
 
 What a report contains:
   - the verdict matrix: each postulate × AGM / TSR / VFR, with the number of
-    operators that fail it,
-  - the first counterexample for every failure, naming the exact operator,
+    configurations that fail it,
+  - the first counterexample for every failure, naming the exact configuration,
   - postulates that hold only vacuously (premise never triggered),
   - the nine transformation properties on identity / TrustExpansion / ForgetTransform,
   - the relationships between postulates (r1-r3), which must have no violations,
@@ -82,7 +82,7 @@ EXPECTED_VACUOUS = frozenset({("Non-manipulability", "AGM"), ("Weak non-manipula
 
 @dataclass(frozen=True)
 class Relationship:
-    """A claim linking postulates, checked on each operator separately."""
+    """A claim linking postulates, checked on each configuration separately."""
 
     code: str
     statement: str
@@ -113,8 +113,8 @@ class PostulateSummary:
     """One postulate over a whole family."""
 
     postulate: Postulate
-    failing: int                                  # number of operators that fail
-    triggered: int                                # premise cases, summed over operators
+    failing: int                                  # number of configurations that fail
+    triggered: int                                # premise cases, summed over configurations
     first_failure: tuple[Member, PostulateResult] | None
 
     @property
@@ -154,7 +154,7 @@ class FamilyReport:
 
 
 def run_family(family: str, sig: Signature, members: Iterable[Member] | None = None) -> FamilyReport:
-    """Check every operator of a family (or the given members) against all 24 postulates."""
+    """Check every configuration of a family (or the given members) against all 24 postulates."""
     chosen = FAMILIES[family](sig) if members is None else members
     return FamilyReport(family, sig, [(m, check(m.operator, sig)) for m in chosen])
 
@@ -182,7 +182,7 @@ def mismatches(reports: Mapping[str, FamilyReport]) -> list[str]:
         for family, report in reports.items():
             bad = report.relationship_violations(rel)
             if bad:
-                problems.append(f"{rel.code} violated by {len(bad)} {family} operators, e.g. {bad[0].describe()}")
+                problems.append(f"{rel.code} violated by {len(bad)} {family} configurations, e.g. {bad[0].describe()}")
     return problems
 
 
@@ -224,7 +224,9 @@ def format_report(
 ) -> str:
     sig = next(iter(reports.values())).signature
     sizes = ", ".join(f"{r.size:,} {f}" for f, r in reports.items())
-    out = [f"Postulate checker: signature ({', '.join(sig.names)}), {sizes} operators", ""]
+    header = (f"Postulate checker: signature ({', '.join(sig.names)}), {sizes} configurations "
+              "(ordering × trust setting; claim i9 counts their distinct behaviours)")
+    out = [header, ""]
 
     # --- verdict matrix
     col = 12
@@ -235,7 +237,7 @@ def format_report(
             s = report.summary(p.name)
             cells.append("✓ vacuous" if s.vacuous else "✓" if s.holds else f"✗ {s.failing:,}")
         out.append(f"{p.number:>3}  {p.name:<26}" + "".join(f"{c:<{col}}" for c in cells))
-    legend = ("✓ every operator satisfies it   ✗ n  n operators fail it   "
+    legend = ("✓ every configuration satisfies it   ✗ n  n configurations fail it   "
               "vacuous  holds only because the premise never arises")
     out += ["", legend, ""]
 
@@ -265,7 +267,7 @@ def format_report(
         out.append("")
 
     # --- relationships
-    out.append("Relationships (operators violating each; all should be 0)")
+    out.append("Relationships (configurations violating each; all should be 0)")
     for rel in RELATIONSHIPS:
         counts = "  ".join(f"{f} {len(r.relationship_violations(rel))}" for f, r in reports.items())
         out.append(f"  {rel.code}  {rel.statement:<58} {counts}")
@@ -320,8 +322,11 @@ def format_markdown(
     sig = next(iter(reports.values())).signature
     families = list(reports)
     sizes = ", ".join(f"{r.size:,} {f}" for f, r in reports.items())
+    intro = (f"Checked exhaustively over {len(sig)} variables ({', '.join(sig.names)}): {sizes} "
+             "configurations, i.e. every plausibility ordering paired with every trust setting "
+             "(claim i9 counts how many distinct behaviours they give).")
     out = [
-        f"Checked exhaustively over {len(sig)} variables ({', '.join(sig.names)}): {sizes} operators.",
+        intro,
         "",
         "#### Postulates",
         "",
@@ -334,7 +339,7 @@ def format_markdown(
             s = report.summary(p.name)
             cells.append("✓ (vacuous)" if s.vacuous else "✓" if s.holds else f"✗ ({s.failing:,} fail)")
         out.append(f"| {p.number} | {p.name} | {_md(p.source)} | " + " | ".join(cells) + " |")
-    legend = ("✓ every operator in the family satisfies it · ✗ (n fail) n operators have a "
+    legend = ("✓ every configuration of the method satisfies it · ✗ (n fail) n configurations have a "
               "counterexample · (vacuous) the premise never arises")
     out += ["", legend, ""]
 
@@ -352,7 +357,7 @@ def format_markdown(
     out.append("")
 
     out += ["#### Relationships between postulates", "",
-            "| # | Relationship | Source | Operators violating it |", "|---|---|---|---:|"]
+            "| # | Relationship | Source | Configurations violating it |", "|---|---|---|---:|"]
     for rel in RELATIONSHIPS:
         total = sum(len(r.relationship_violations(rel)) for r in reports.values())
         out.append(f"| {rel.code} | {_md(rel.statement)} | {_md(rel.source)} | {total} |")

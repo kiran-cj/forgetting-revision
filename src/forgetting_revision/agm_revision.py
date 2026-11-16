@@ -127,8 +127,8 @@ class AGMRevision:
 
         Walk up from the bottom tier and stop at the first tier that contains
         any candidate. If there are no candidates (beta is inconsistent), the
-        result is empty, i.e. an inconsistent belief set, which in-turn performs no
-        revision and the belief set remains unchanged.
+        result is empty: Mod(K * beta) = ∅, which is the inconsistent belief
+        set Cn(⊥). (It does NOT leave K unchanged.)
         """
         unknown = candidates - self.universe
         if unknown:

@@ -8,6 +8,7 @@ from forgetting_revision import (
     TOP,
     And,
     Const,
+    Formula,
     Iff,
     Implies,
     Not,
@@ -109,3 +110,21 @@ def test_variables():
 def test_variables_rejects_non_formulas():
     with pytest.raises(TypeError):
         variables("p")
+
+# ---------------------------------------------------------------------- #
+# Mixing formulas with non-formulas fails immediately
+
+@pytest.mark.parametrize("build", [
+    lambda p: p & True,
+    lambda p: True & p,
+    lambda p: p | "q",
+    lambda p: p >> 1,
+    lambda p: p.iff(None),
+], ids=["p & True", "True & p", 'p | "q"', "p >> 1", "p.iff(None)"])
+def test_non_formula_operand_is_a_type_error(build):
+    with pytest.raises(TypeError):
+        build(Var("p"))
+
+
+def test_formula_operands_still_work():
+    assert isinstance(p & q, Formula) and isinstance(p >> q, Formula)

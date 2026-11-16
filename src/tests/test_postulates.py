@@ -113,7 +113,7 @@ def test_all_transforms_satisfy_all_nine(transform_reports2):
 
 def test_report_contents(reports2, transform_reports2):
     text = format_report(reports2, transform_reports2)
-    assert "75 AGM, 1,125 TSR, 300 VFR operators" in text
+    assert "75 AGM, 1,125 TSR, 300 VFR configurations" in text
     assert "Non-manipulability" in text and "✓ vacuous" in text
     assert "First counterexamples" in text
     assert "f7  Pawlak" in text

@@ -11,6 +11,7 @@ nothing else.
     weakened = forget(alpha, {"q"})
 """
 from collections.abc import Iterable
+from dataclasses import dataclass
 from typing import Protocol
 
 from .syntax import BOTTOM, TOP, Formula, Or
@@ -23,6 +24,7 @@ class ForgetOperator(Protocol):
 
     def __call__(self, formula: Formula, forget: Iterable[str]) -> Formula: ...
 
+@dataclass(frozen=True)
 class BooleForget: # transformation function for Variable Forgetting Revision
     """
     Boole's syntactic forgetting:
@@ -32,6 +34,9 @@ class BooleForget: # transformation function for Variable Forgetting Revision
         Forget(α, p) = α[p/⊤] ∨ α[p/⊥]
 
     A set of variables is forgotten one at a time.
+
+    A frozen dataclass with no fields: every BooleForget() is interchangeable,
+    so any two compare equal (and so do two ForgetTransforms built with them).
     """
 
     def __call__(self, formula: Formula, forget: Iterable[str]) -> Formula:

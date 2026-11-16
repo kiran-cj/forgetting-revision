@@ -4,8 +4,7 @@ A Python implementation of **Variable Forgetting Revision (VFR)**, a trust-based
 
 The goal is to turn the dissertation's pen-and-paper results into code that checks them **exhaustively** on small signatures, rather than through a handful of worked examples.
 
-The package checks **24 postulates** from AGM revision and from Booth & Hunter's *Trust as a Precursor to Belief Revision* (2018) against **every** AGM, Trust-Sensitive (TSR) and Variable Forgetting (VFR) operator over two variables, 1,500 operators in all. It also checks **9 properties** of the transformation functions, and **12 specific claims and counterexamples** from the two papers. All of them match the literature, and along the way the checker found [five corrections](#findings) to the dissertation.
-
+The package checks 24 postulates from AGM revision and from Booth & Hunter's Trust as a Precursor to Belief Revision (2018) against every possible configuration of AGM, Trust-Sensitive (TSR) and Variable Forgetting (VFR) revision over two variables. That means each plausibility ordering paired with each trust setting: 1,500 configurations, giving 489 distinct behaviours. It also checks 9 properties of the transformation functions, and 13 specific claims and counterexamples from the two papers. All of them match the literature.
 
 ## The idea in one example
 
@@ -14,7 +13,6 @@ A doctor says to the patient: *"You have a viral infection, and the jewel on you
 The patient naturally accepts the diagnosis but rejects (forgets) the claim on the jewellery, because the doctor is considered to be an expert in the medical field but not on gemstones and jewellery. Classical (AGM) belief revision can't do this, since it must accept the whole input.
 
 VFR handles it in two steps:
-
 1. **Forget** the variables the source isn't trusted on.
 2. **Revise** by what's left, using an ordinary AGM revision operator.
 
@@ -44,32 +42,63 @@ uv run pytest -q              # the test suite
 uv run check-postulates       # every postulate, every operator, with counterexamples
 ```
 
-The doctor example in code:
 
-```python
-from forgetting_revision import AGMRevision, SelectiveRevision, Signature, Var, states_str
-from forgetting_revision.postulates import check
+## What is being checked: 1,500 configurations
+ 
+AGM revision, TSR and VFR are three **methods** of revising beliefs. None of them is a single concrete rule until its settings are fixed. A **configuration** is one concrete instance of a method, and it has these settings:
+ 
+1. **A plausibility ordering** over the states: which situations the agent finds more or less likely. Its most plausible tier is the agent's current belief set, Mod(K). Revising picks the most plausible states that fit what is accepted from the report.
+2. **A trust setting:** what the agent believes the source can tell apart. For TSR this is a state partition, and for VFR a set U of variables the source is not trusted on. Plain AGM revision has no trust setting, because the source is believed outright.
+Booth & Hunter call each such instance "an operator", as in "there exists an AGM revision operator ∗ and a state partition Π such that…". This README says *configuration* instead, so that "the TSR operator" can keep meaning the method.
+ 
+With two variables, p and q, there are four states (TT, TF, FT, FF), and so:
+ 
+| | Settings | How many |
+|---|---|---|
+| Orderings of 4 states, ties allowed | Fubini number | 75 |
+| State partitions of 4 states | Bell number | 15 |
+| Untrusted sets U ⊆ {p, q} | 2² | 4 |
+| **AGM** configurations | ordering | 75 |
+| **TSR** configurations | ordering × partition | 75 × 15 = 1,125 |
+| **VFR** configurations | ordering × untrusted set | 75 × 4 = 300 |
+ 
+That is **1,500 configurations**. Not all of them behave differently, though:
+ 
+- An agent that trusts nothing never changes its beliefs, so only the bottom tier of its ordering matters. Orderings that agree on that tier behave identically.
+- The methods overlap: every AGM configuration behaves like a VFR one (U = ∅), and every VFR configuration behaves like a TSR one.
+Counting what they *do* rather than how they are set up gives **75 AGM ⊂ 144 VFR ⊂ 489 TSR distinct behaviours**, each method strictly inside the next (claim i9). Checking all 1,500 configurations tests each of the 489 behaviours at least once. Repeats simply repeat a verdict, so the results are unaffected.
 
-sig = Signature.of("sick diam")
-sick, diam = Var("sick"), Var("diam")
-
-# The patient's plausibility ordering (Booth & Hunter, Example 3), most plausible first
-k = AGMRevision.from_tiers([[(False, True)], [(True, True), (False, False)], [(True, False)]])
-doctor = SelectiveRevision.vfr(k, sig, untrusted="diam")
-
-states_str(doctor.revise(sick & ~diam))   # '{TT}': now believes sick (and still diam)
-
-results = check(doctor, sig)               # all 24 postulates for this one operator
-results["Success"].explain()               # 'Success: FAILS at φ = {TF}, K◦φ = {TT}'
-results["Feeble success"].explain()        # 'Feeble success: holds on 3 cases'
+## How trust is modelled: TSR and VFR
+ 
+Both methods work the same way. First they **widen** the report so that it only says what the source can be trusted on. Then they **revise** by the result with ordinary AGM revision:
+ 
 ```
-
+K ◦ α  =  K ∗ f(α)
+```
+ 
+The two methods differ only in the widening step f, and in particular in **where the trust information comes from**.
+ 
+### Trust-Sensitive Revision (Booth & Hunter)
+ 
+In Booth & Hunter's framework the agent A has a **trust function** that gives, for each source B and belief set K, a **state partition** Π_B,K. States in the same cell are ones that A does not trust B to tell apart. A report φ from B is replaced by its **trust expansion** Π[φ], the union of every cell that contains a model of φ. A then revises by that: K ∗ᴮ φ is the set of most plausible states in Π[φ].
+ 
+The partition is an **input**. It is part of the agent's set-up, like its plausibility ordering, and it stands for A's judgement of B's expertise. Booth & Hunter do not say how A arrives at it, so any partition is allowed, including ones that do not follow the propositional variables.
+ 
+### Variable Forgetting Revision
+ 
+VFR does not take a partition. It takes the set U of variables the source is **not** trusted on, and forgets them from the report using Boole's syntactic forgetting:
+ 
+```
+Forget(α, p)  =  α[p/⊤] ∨ α[p/⊥]
+```
+ 
+Forgetting U makes indistinguishable exactly the states that differ only on U. So VFR **generates** a partition, "agree on every trusted variable", where TSR needs one to be given. This answers a question TSR leaves open, namely where the partition comes from. The cost is that forgetting can only produce some partitions: 4 of the 15 over two variables. Therefore, VFR is TSR restricted to those partitions.
 
 ## How the checker works
 
 - **Meanings, not formulas.** Over n variables there are infinitely many formulas but only 2^(2^n) meanings (sets of states): 16 for two variables. The checker builds one formula per meaning, asks the real operator to revise by it, and stores the 16 results. Each postulate is then a few set operations on that table.
 - **Extensionality makes that sound.** Revising by five different spellings of every meaning must give the same answer. For VFR this tests the syntactic forgetting itself (`substitute`, `simplify`).
-- **Every operator, not a few.** Orderings over states are counted by the Fubini numbers (75 for two variables) and state partitions by the Bell numbers (15). Each AGM operator is one ordering, each TSR operator an ordering plus a partition, and each VFR operator an ordering plus a set of untrusted variables.
+- **Every configuration, not a few.** Orderings over states are counted by the Fubini numbers (75 for two variables) and state partitions by the Bell numbers (15). The checker builds every combination of ordering and trust setting, 1,500 configurations in all, covering all 489 distinct behaviours (see "What is being checked" above).
 - **Counterexamples, not just verdicts.** A failure names the exact operator and inputs. Each check also counts how often its premise came up, so a pass where the premise never arose is flagged as *vacuous*.
 - **Negative controls.** Booth & Hunter's own counterexamples are run through the checker, which must report them as failures. That shows its "✓" verdicts can be trusted.
 - **Yao's theorem in code.** `induced_partition(f)` recovers the state partition behind any partition-based transformation. Applied to `Forget(·, U)`, it gives exactly the "agree on the trusted variables" partition, which is the dissertation's main result, VFR ⊆ TSR.
@@ -78,7 +107,7 @@ results["Feeble success"].explain()        # 'Feeble success: holds on 3 cases'
 ## Results
 
 <!-- verdicts:start -->
-Checked exhaustively over 2 variables (p, q): 75 AGM, 1,125 TSR, 300 VFR operators.
+Checked exhaustively over 2 variables (p, q): 75 AGM, 1,125 TSR, 300 VFR configurations, i.e. every plausibility ordering paired with every trust setting (claim i9 counts how many distinct behaviours they give).
 
 #### Postulates
 
@@ -109,7 +138,7 @@ Checked exhaustively over 2 variables (p, q): 75 AGM, 1,125 TSR, 300 VFR operato
 | 23 | Non-manipulability | B&H Prop 14; dissertation §6.5.3 | ✓ (vacuous) | ✗ (869 fail) | ✗ (150 fail) |
 | 24 | Weak non-manipulability | B&H Prop 15 | ✓ (vacuous) | ✓ | ✓ |
 
-✓ every operator in the family satisfies it · ✗ (n fail) n operators have a counterexample · (vacuous) the premise never arises
+✓ every configuration of the method satisfies it · ✗ (n fail) n configurations have a counterexample · (vacuous) the premise never arises
 
 #### Properties of the transformation f
 
@@ -127,7 +156,7 @@ Checked exhaustively over 2 variables (p, q): 75 AGM, 1,125 TSR, 300 VFR operato
 
 #### Relationships between postulates
 
-| # | Relationship | Source | Operators violating it |
+| # | Relationship | Source | Configurations violating it |
 |---|---|---|---:|
 | r1 | Negation invariance ⇔ Very weak success | B&H §6 | 0 |
 | r2 | Feeble success ∧ Non-manipulability ⇒ Very weak success | B&H Prop 13 | 0 |
@@ -145,6 +174,7 @@ Checked exhaustively over 2 variables (p, q): 75 AGM, 1,125 TSR, 300 VFR operato
 | i6 | Alarm example: TSR can weaken 'alarm 1 rang' to 'exactly one rang'; no VFR can | dissertation §6.5.4 (corrected report, see detail) | ✓ | f(p ∧ ¬q) = p ⊕ q under TSR, never under VFR. As written in §6.5.4 (α = p ∨ q) TSR gives {TT, TF, FT, FF} = ⊤, i.e. it ignores the report, because TT shares a cell with FF |
 | i7 | Very weak success fails for VFR: K = p ⊕ q, U = {p}, α = ¬(p ∧ ¬q) | dissertation §6.3.1 (with K ⊬ ¬α, not K ⊢ ¬α) | ✓ | a counterexample under all 3 faithful orderings for K = p ⊕ q |
 | i8 | Doctor-Necklace: forgetting diam weakens the report to 'sick' (Examples 1-2) | dissertation §5; B&H Examples 1-3 | ✓ | Ex 1: Forget(sick ∧ ¬diam) ≡ sick; Ex 2: ≡ sick over 3 variables; B&H Ex 3 results (1)-(3) reproduced |
+| i9 | AGM ⊂ VFR ⊂ TSR: 75 ⊂ 144 ⊂ 489 distinct behaviours | dissertation §6.1, §6.5.4; B&H Prop 2 | ✓ | AGM 75 configurations → 75 behaviours, VFR 300 configurations → 144 behaviours, TSR 1,125 configurations → 489 behaviours; each family strictly inside the next, so 1,500 configurations give 489 distinct behaviours |
 
 #### Negative controls (each must be reported as failing its target)
 
@@ -159,22 +189,6 @@ Checked exhaustively over 2 variables (p, q): 75 AGM, 1,125 TSR, 300 VFR operato
 
 _Generated by `uv run check-postulates --update-readme`. Do not edit by hand._
 <!-- verdicts:end -->
-
-
-## Findings
-
-Running the dissertation's claims through the checker found five places where the text should change:
-
-1. **Postulate 1 (§6.3), like B&H Proposition 1, needs a consistent α.** Forget(⊥) = ⊥, so revising by ⊥ gives the inconsistent belief set, not K.
-2. **§6.3.1 justifies Proxy success by citing Feeble success.** It follows from Fermé & Hansson (B&H Proposition 3). Feeble success also needs the Pawlak property, not just the Kuratowski properties (control c1).
-3. **The §6.3.1 Very weak success counterexample says K ⊢ ¬α.** It should say K ⊬ ¬α. With that fixed it is a counterexample under all three orderings that fit (claim i7).
-4. **The conclusion says VFR satisfies every AGM postulate except Success and Vacuity.** It also fails Superexpansion and Subexpansion. Any operator that satisfies Consistency but not Success must fail Superexpansion.
-5. **The §6.5.4 alarm example doesn't work as written.** For the report "an alarm went off" (p ∨ q), the proposed partition puts TT in the same cell as FF, so TSR ignores the report entirely. With "alarm 1 rang" (p ∧ ¬q) the example works: TSR concludes "exactly one rang", which no choice of forgotten variables can produce (claim i6).
-
-The checker also confirmed two smaller points:
-- Weak non-manipulability holds vacuously for AGM, as Non-manipulability does.
-- With only one variable, TSR and VFR cannot be manipulated at all. A source must be trusted on one thing and not another, which needs two variables.
-
 
 ## Project layout
 
@@ -194,14 +208,6 @@ src/forgetting_revision/
   checker.py              the runner, the report and `check-postulates`
 src/tests/                pytest suite
 ```
-
-
-## Limits
-
-- An exhaustive check over two variables is a proof for two variables only. The general proofs are Booth & Hunter's and the dissertation's; the checker confirms them and finds counterexamples.
-- Three variables are covered for the transformation properties and claim i4. The full operator families there (545,835 orderings × 4,140 partitions) would need sampling, which is planned.
-- The inconsistent belief set K = Cn(⊥) is out of scope, because a ranking of states always has a non-empty most-plausible tier.
-
 
 ## References
 

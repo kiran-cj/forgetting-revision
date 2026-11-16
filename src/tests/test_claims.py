@@ -30,7 +30,7 @@ def test_claim_holds(results, code):
 
 
 def test_registry():
-    assert [c for c in CLAIMS if CLAIMS[c].kind == INSTANCE] == [f"i{n}" for n in range(1, 9)]
+    assert [c for c in CLAIMS if CLAIMS[c].kind == INSTANCE] == [f"i{n}" for n in range(1, 10)]
     assert [c for c in CLAIMS if CLAIMS[c].kind == CONTROL] == [f"c{n}" for n in range(1, 5)]
     for c in CLAIMS.values():
         assert c.title and c.source
